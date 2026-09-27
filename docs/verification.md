@@ -6,9 +6,9 @@ How this crate was verified before its first release (2026-09-27).
 
 | Build | Result |
 |---|---|
-| `autumn-web` 0.7.0 (crates.io), `--features test-support` | 91 tests pass (41 unit, 25 HTTP, 11 streaming, 5 persisted, 5 property, 3 conformance, 1 doc) |
+| `autumn-web` 0.7.0 (crates.io), `--features test-support` | 93 tests pass (41 unit, 25 HTTP, 13 streaming, 5 persisted, 5 property, 3 conformance, 1 doc) |
 | same, `--features boxed-trait,test-support` | pass |
-| Autumn `main` via `[patch.crates-io]`, `--features test-support,plugin-contract` | pass (adds the contract test: 92) |
+| Autumn `main` via `[patch.crates-io]`, `--features test-support,plugin-contract` | pass (adds the contract test) |
 | `cargo +1.88.0 check` (MSRV) | pass |
 | `cargo clippy --all-targets -D warnings` (pedantic + nursery), both feature sets | clean |
 | `cargo llvm-cov` | 94.3 % lines |

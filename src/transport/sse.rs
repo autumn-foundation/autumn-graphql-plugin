@@ -11,8 +11,8 @@
 use std::convert::Infallible;
 use std::sync::Arc;
 
-use ::http::StatusCode;
 use ::http::request::Parts;
+use ::http::{Method, StatusCode};
 use async_graphql::Executor;
 use autumn_web::AppState;
 use axum::response::sse::{Event, KeepAlive, Sse};
@@ -23,7 +23,9 @@ use super::http::Incoming;
 use super::{Endpoint, Format, drained, rejection_response};
 use crate::context::Transport;
 use crate::error::codes;
+use crate::limits;
 use crate::pipeline::Rejection;
+use async_graphql::parser::types::OperationType;
 
 pub async fn serve<E: Executor>(
     endpoint: Arc<Endpoint<E>>,
@@ -50,6 +52,24 @@ pub async fn serve<E: Executor>(
             .await
     {
         return rejection_response(rejection, Format::Json);
+    }
+    // `GET` is what caches, prefetchers and cross-site links replay: over
+    // SSE it may carry queries and subscriptions (browsers' `EventSource`
+    // can only `GET`), never a mutation.
+    let operation_name = request.operation_name.clone();
+    if parts.method == Method::GET
+        && let Ok(document) = request.parsed_query()
+        && limits::operation_type(document, operation_name.as_deref())
+            == Some(OperationType::Mutation)
+    {
+        return rejection_response(
+            Rejection::new(
+                codes::METHOD_NOT_ALLOWED,
+                "mutation operations are not allowed over GET; use POST",
+                StatusCode::METHOD_NOT_ALLOWED,
+            ),
+            Format::Json,
+        );
     }
     let Some(slot) = endpoint.try_stream_slot(Transport::Sse) else {
         return rejection_response(

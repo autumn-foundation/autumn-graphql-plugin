@@ -403,3 +403,33 @@ async fn sse_serves_trusted_documents_and_honours_hook_refusals() {
         "FORBIDDEN"
     );
 }
+
+/// Regression: `GET` + `Accept: text/event-stream` must not become a way to
+/// run mutations over `GET`. Subscriptions stay allowed (`EventSource` can
+/// only `GET`).
+#[tokio::test]
+async fn sse_over_get_refuses_mutations_but_allows_subscriptions() {
+    let client = common::client(plugin());
+    let mutation = "mutation%20%7B%20createNote(title%3A%20%22x%22)%20%7B%20id%20%7D%20%7D";
+    let response = client
+        .get(&format!("/graphql?query={mutation}"))
+        .header("accept", "text/event-stream")
+        .send()
+        .await;
+    assert_eq!(response.status, 405);
+    let (_, body) = common::post(&client, "{ notes { id } }", json!({})).await;
+    assert_eq!(
+        body["data"]["notes"].as_array().unwrap().len(),
+        2,
+        "nothing executed"
+    );
+
+    let subscription = "subscription%20%7B%20ticks(count%3A%201)%20%7D";
+    let response = client
+        .get(&format!("/graphql?query={subscription}"))
+        .header("accept", "text/event-stream")
+        .send()
+        .await;
+    assert_eq!(response.status, 200);
+    assert_eq!(sse_events(&response.text()).len(), 2);
+}

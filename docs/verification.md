@@ -6,7 +6,7 @@ How this crate was verified before its first release (2026-09-27).
 
 | Build | Result |
 |---|---|
-| `autumn-web` 0.7.0 (crates.io), `--features test-support` | 93 tests pass (41 unit, 25 HTTP, 13 streaming, 5 persisted, 5 property, 3 conformance, 1 doc) |
+| `autumn-web` 0.7.0 (crates.io), `--features test-support` | 92 tests pass (41 unit, 25 HTTP, 12 streaming, 5 persisted, 5 property, 3 conformance, 1 doc) |
 | same, `--features boxed-trait,test-support` | pass |
 | Autumn `main` via `[patch.crates-io]`, `--features test-support,plugin-contract` | pass (adds the contract test) |
 | `cargo +1.88.0 check` (MSRV) | pass |

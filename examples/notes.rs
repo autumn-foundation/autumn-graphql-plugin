@@ -28,7 +28,10 @@
 //!   production masking;
 //! - subscriptions fan out through a `tokio::sync::broadcast` channel.
 
-#![allow(clippy::unused_async)] // async-graphql resolvers are `async fn`
+// async-graphql resolvers are `async fn` whether or not they await; clippy
+// 1.98 added `unused_async_trait_impl` for the `#[Object]` impls it expands
+// to (`unknown_lints` keeps older clippy quiet about the new name).
+#![allow(unknown_lints, clippy::unused_async, clippy::unused_async_trait_impl)]
 
 use std::sync::{Arc, RwLock};
 

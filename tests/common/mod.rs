@@ -1,12 +1,16 @@
 //! A small schema that exercises every plugin feature, shared by the
 //! integration tests.
 
-// async-graphql resolvers are `async fn` whether or not they await.
+// async-graphql resolvers are `async fn` whether or not they await; clippy
+// 1.98 added `unused_async_trait_impl` for the `#[Object]` impls they expand
+// to (`unknown_lints` keeps older clippy quiet about the new name).
 #![allow(
     dead_code,
+    unknown_lints,
     clippy::unwrap_used,
     clippy::expect_used,
     clippy::unused_async,
+    clippy::unused_async_trait_impl,
     missing_docs
 )]
 

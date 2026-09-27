@@ -234,7 +234,7 @@ pub async fn post_graphql<E: Executor>(
         "application/json" | "application/graphql-response+json" | "" => {
             match read_body(body, limit).await {
                 Ok(bytes) => parse_json_body(&bytes),
-                Err(response) => return response,
+                Err(response) => return *response,
             }
         }
         "application/graphql" => match read_body(body, limit).await {
@@ -247,7 +247,7 @@ pub async fn post_graphql<E: Executor>(
                     };
                     ensure_has_document(&incoming).map(|()| (vec![incoming], false))
                 }),
-            Err(response) => return response,
+            Err(response) => return *response,
         },
         "multipart/form-data" if endpoint.uploads.enabled => {
             if endpoint.csrf_prevention && !has_preflight_header(&parts.headers) {
@@ -263,7 +263,7 @@ pub async fn post_graphql<E: Executor>(
             }
             match read_body(body, limit).await {
                 Ok(bytes) => parse_multipart(&content_type, bytes, &endpoint.uploads).await,
-                Err(response) => return response,
+                Err(response) => return *response,
             }
         }
         _ => {
@@ -511,12 +511,17 @@ fn has_preflight_header(headers: &HeaderMap) -> bool {
     })
 }
 
-async fn read_body(body: axum::body::Body, limit: usize) -> Result<axum::body::Bytes, Response> {
+/// Read the whole body, bounded by `limit`. The error is the finished HTTP
+/// response, boxed to keep the `Result` small.
+async fn read_body(
+    body: axum::body::Body,
+    limit: usize,
+) -> Result<axum::body::Bytes, Box<Response>> {
     axum::body::to_bytes(body, limit).await.map_err(|error| {
         let too_large = std::error::Error::source(&error)
             .is_some_and(<dyn std::error::Error + 'static>::is::<http_body_util::LengthLimitError>)
             || error.to_string().contains("length limit");
-        if too_large {
+        Box::new(if too_large {
             rejection_response(
                 Rejection::new(
                     codes::PAYLOAD_TOO_LARGE,
@@ -527,7 +532,7 @@ async fn read_body(body: axum::body::Body, limit: usize) -> Result<axum::body::B
             )
         } else {
             plain(StatusCode::BAD_REQUEST, "could not read the request body")
-        }
+        })
     })
 }
 

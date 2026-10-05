@@ -647,7 +647,8 @@ async fn operations_and_errors_are_counted() {
             "{code}: {errors:?}"
         );
     }
-    assert!(!series("graphql_operation_duration_seconds").is_empty());
+    let durations = series("graphql_operation_duration_seconds");
+    assert_ne!(durations.len(), 0, "no duration series: {durations:?}");
 }
 
 // ── Test helpers (feature `test-support`) ───────────────────────────────────

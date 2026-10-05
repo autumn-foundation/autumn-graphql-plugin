@@ -66,7 +66,7 @@ jobs:
       - run: cargo check --features test-support
 
   autumn-main:
-    name: Autumn main + plugin-contract
+    name: Autumn main
     runs-on: ubuntu-latest
     # Autumn main is a moving target; a break here is a signal, not a
     # release blocker for the crates.io build.
@@ -77,7 +77,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Test against autumn-web from git main
         run: >
-          cargo test --features test-support,plugin-contract
+          cargo test --features test-support
           --config 'patch.crates-io.autumn-web.git="https://github.com/autumn-foundation/autumn"'
 
   coverage:

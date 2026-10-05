@@ -39,4 +39,11 @@ All notable changes to this crate are documented here. The format follows
   tracing spans, slow-operation log.
 - `sdl::assert_committed_sdl` drift check; `testing::GraphqlTestExt`
   (feature `test-support`).
-- Features: `plugin-contract` (for Autumn `main`), `boxed-trait`.
+- `Plugin::contract` declaring `autumn-web` `0.8` (`SUPPORTED_AUTUMN_WEB`),
+  checked by `autumn plugin-check` and Autumn's startup gate.
+- Feature: `boxed-trait`.
+
+### Changed
+
+- Built against `autumn-web` 0.8 (was 0.7). The contract is declared
+  unconditionally; the `plugin-contract` feature is gone (ADR 0007).

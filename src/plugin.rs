@@ -8,7 +8,6 @@ use async_graphql::{Executor, ObjectType, Schema, SchemaBuilder, SubscriptionTyp
 use autumn_web::AppState;
 use autumn_web::app::AppBuilder;
 use autumn_web::plugin::Plugin;
-#[cfg(feature = "plugin-contract")]
 use autumn_web::plugin_contract::PluginContract;
 use autumn_web::route_listing::{RouteClassification, RouteInfo};
 use axum::Router;
@@ -30,8 +29,10 @@ use crate::transport::{Endpoint, http, ws};
 /// `autumn plugin-check` output.
 pub const PLUGIN_NAME: &str = "autumn-plugin-graphql";
 
-/// The `autumn-web` series this release is verified against.
-pub const SUPPORTED_AUTUMN_WEB: &str = "0.7";
+/// The `autumn-web` series this release is verified against, as the semver
+/// requirement declared in [`Plugin::contract`]. Autumn's startup gate and
+/// `autumn plugin-check` refuse any other series.
+pub const SUPPORTED_AUTUMN_WEB: &str = "0.8";
 
 type Materialize<E> = Box<dyn FnOnce(&GraphqlConfig) -> (E, Option<String>) + Send>;
 type RouterTransform = Box<dyn FnOnce(Router<AppState>) -> Router<AppState> + Send>;
@@ -607,9 +608,7 @@ impl<E: Executor> Plugin for GraphqlPlugin<E> {
         ))
     }
 
-    /// Only with the `plugin-contract` feature: the published `autumn-web`
-    /// 0.7.0 predates `Plugin::contract`.
-    #[cfg(feature = "plugin-contract")]
+    /// Declares the supported `autumn-web` series ([`SUPPORTED_AUTUMN_WEB`]).
     fn contract(&self) -> Option<PluginContract> {
         Some(
             PluginContract::new(PLUGIN_NAME)

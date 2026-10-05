@@ -623,7 +623,7 @@ mod tests {
             "extensions=%7B%22persistedQuery%22%3A%7B%22version%22%3A1%7D%7D",
         ))
         .unwrap();
-        assert!(apq.request.query.is_empty());
+        assert_eq!(apq.request.query, "");
     }
 
     #[test]

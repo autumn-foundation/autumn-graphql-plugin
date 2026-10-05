@@ -376,13 +376,13 @@ fn committed_schema_matches_the_live_sdl() {
 
 | This crate | `autumn-web` | Notes |
 |---|---|---|
-| `0.1` | `0.7` (crates.io) | default features |
-| `0.1` + `plugin-contract` | `main` / the next release | adds `Plugin::contract`, which the published `0.7.0` does not have |
+| `0.1` | `0.8` (crates.io) | declares `Plugin::contract` for `0.8` |
 
-CI runs the suite against both. The `plugin-contract` feature declares the
-supported `autumn-web` range so `autumn plugin-check` and the startup
-compatibility gate can see it; turn it on once your app is on a release that
-ships `autumn_web::plugin_contract`.
+The plugin declares its supported `autumn-web` range
+(`SUPPORTED_AUTUMN_WEB`) through `Plugin::contract`, so `autumn plugin-check`
+and Autumn's startup compatibility gate refuse a mismatched pairing with an
+actionable message instead of failing later. CI also runs the suite against
+Autumn `main` as an early warning.
 
 If your app turns on async-graphql's `boxed-trait` feature, turn on this
 crate's `boxed-trait` feature too (async-graphql changes the shape of its

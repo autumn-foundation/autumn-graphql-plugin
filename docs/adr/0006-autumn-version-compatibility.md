@@ -1,6 +1,6 @@
 # ADR 0006 — Build against published autumn-web, gate `main`-only APIs
 
-- Status: accepted
+- Status: superseded by [ADR 0007](0007-autumn-web-0.8.md)
 - Date: 2026-09-27
 
 ## Context

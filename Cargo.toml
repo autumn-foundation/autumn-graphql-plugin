@@ -20,17 +20,12 @@ test-support = []
 # of its `Executor` trait under that feature, so an app that turns it on must
 # turn this on too (Cargo cannot do it for us).
 boxed-trait = ["async-graphql/boxed-trait", "dep:async-trait"]
-# Declare a `PluginContract` (`Plugin::contract`) so `autumn plugin-check`
-# and the startup compatibility gate see this plugin's supported range. The
-# contract API is on autumn-web `main` and ships in the release after 0.7.0;
-# the published 0.7.0 does not have it, so this is opt-in until then.
-plugin-contract = []
 
 [dependencies]
 # The framework. No default features: this crate needs only the core surface
 # (plugin API, `AppState`, errors, metrics, config/env helpers), and Cargo
 # unifies features with whatever the host app enables.
-autumn-web = { version = "0.7", default-features = false }
+autumn-web = { version = "0.8", default-features = false }
 # The GraphQL executor. Default features are off: `graphiql`/`playground` pull
 # CDN-hosted HTML that Autumn's default CSP blocks, and `tempfile` is only a
 # storage strategy for uploads (they are held in memory, bounded by limits).
@@ -52,7 +47,7 @@ tracing = "0.1"
 
 [dev-dependencies]
 async-graphql = { version = "7.0", default-features = false, features = ["dynamic-schema"] }
-autumn-web = { version = "0.7", default-features = false }
+autumn-web = { version = "0.8", default-features = false }
 axum = { version = "0.8", features = ["tokio", "http1", "ws"] }
 proptest = "1"
 tokio = { version = "1", features = ["full"] }

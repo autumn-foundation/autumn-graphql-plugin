@@ -10,12 +10,13 @@ async-graphql 7. One crate, published as `autumn-plugin-graphql`.
   (pedantic + nursery are on in `Cargo.toml`)
 - Test: `cargo test --features test-support`
 - Test the boxed-trait build: `cargo test --features boxed-trait,test-support`
-- Test against Autumn `main` (+ contract):
-  `cargo test --features test-support,plugin-contract --config 'patch.crates-io.autumn-web.git="https://github.com/autumn-foundation/autumn"'`
+- Test against Autumn `main`:
+  `cargo test --features test-support --config 'patch.crates-io.autumn-web.git="https://github.com/autumn-foundation/autumn"'`
 - Example: `cargo run --example notes`
 
-**Do not run `--all-features` against crates.io autumn-web**: the
-`plugin-contract` feature needs Autumn `main` (see ADR 0006).
+Targets `autumn-web` 0.8 (ADR 0007). Bumping the Autumn series means bumping
+the dependency **and** `SUPPORTED_AUTUMN_WEB` together — Autumn's contract
+gate panics at `AppBuilder::plugin` on a mismatch.
 
 ## Layout
 
@@ -44,7 +45,7 @@ See `docs/architecture.md`. In short: `plugin.rs` (builder + `Plugin` impl),
   `tests/conformance.rs`.
 - Record significant decisions as `docs/adr/NNNN-*.md`.
 
-## Autumn API notes (0.7.0)
+## Autumn API notes (0.8)
 
 - `AppBuilder::run` panics when no typed routes are registered; nested
   routers do not count.

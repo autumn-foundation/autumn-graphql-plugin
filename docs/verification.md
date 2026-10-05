@@ -1,8 +1,25 @@
 # Verification record
 
-How this crate was verified before its first release (2026-09-27).
+How this crate was verified before its first release (2026-09-27), and
+re-verified on the move to `autumn-web` 0.8 (2026-10-05).
 
-## This crate's suite
+## `autumn-web` 0.8.0 (2026-10-05)
+
+| Build | Result |
+|---|---|
+| `autumn-web` 0.8.0 (crates.io), `--features test-support` | 94 tests pass (41 unit, 25 HTTP, 12 streaming, 5 persisted, 5 property, 5 conformance, 1 doc) |
+| same, `--features boxed-trait,test-support` | pass |
+| `cargo +1.88.0 check` (MSRV) | pass |
+| `cargo clippy --all-targets -D warnings` (pedantic + nursery), both feature sets | clean |
+| `cargo doc -D warnings` | clean |
+| `cargo run --example notes` + `curl` | query, authenticated mutation, coded `UNAUTHENTICATED`, SDL, `graphql_*` metrics |
+
+The contract is now always declared; the conformance suite runs it through
+Autumn's startup gate and `run_conformance`.
+
+## First release, against `autumn-web` 0.7.0 (2026-09-27)
+
+### This crate's suite
 
 | Build | Result |
 |---|---|
@@ -15,7 +32,7 @@ How this crate was verified before its first release (2026-09-27).
 
 Property tests run 512 generated documents per property.
 
-## Drop-in replacement for the react-graphql example
+### Drop-in replacement for the react-graphql example
 
 In a local checkout of `autumn-foundation/autumn` (`main`), the example's
 in-tree plugin was replaced by this crate:
@@ -43,7 +60,7 @@ with the example's tests unchanged — SDL route, `405` for mutations over
 committed-SDL drift gate, and plugin conformance with the contract. The 8
 Docker (testcontainers) tests were not run: no Docker daemon was available.
 
-## Live smoke test
+### Live smoke test
 
 `cargo run --example notes`, exercised with `curl`: query; `UNAUTHENTICATED`
 without a bearer token; authenticated mutation; a subscription over SSE

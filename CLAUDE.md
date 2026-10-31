@@ -14,7 +14,7 @@ async-graphql 7. One crate, published as `autumn-plugin-graphql`.
   `cargo test --features test-support --config 'patch.crates-io.autumn-web.git="https://github.com/autumn-foundation/autumn"'`
 - Example: `cargo run --example notes`
 
-Targets `autumn-web` 0.8 (ADR 0007). Bumping the Autumn series means bumping
+Targets `autumn-web` 0.9 (ADR 0007). Bumping the Autumn series means bumping
 the dependency **and** `SUPPORTED_AUTUMN_WEB` together — Autumn's contract
 gate panics at `AppBuilder::plugin` on a mismatch.
 

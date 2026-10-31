@@ -163,40 +163,42 @@ async fn index() -> &'static str {
 async fn main() {
     let schema = Schema::build(Query, Mutation, Subscriptions).finish();
 
-    autumn_web::app()
-        .routes(autumn_web::routes![index])
-        // `state_initializer` puts the store into `AppState` (builder
-        // `with_extension` values stay on the builder, for plugins).
-        .state_initializer(|state| state.insert_extension(NoteStore::new()))
-        .plugin(
-            GraphqlPlugin::new(schema)
-                // Demo auth: `Authorization: Bearer <name>` becomes the viewer.
-                // A real app runs its session/token extractor here instead.
-                .context(|parts, _state, data| {
-                    Box::pin(async move {
-                        let viewer = parts
-                            .headers
-                            .get("authorization")
-                            .and_then(|v| v.to_str().ok())
-                            .and_then(|v| v.strip_prefix("Bearer "))
-                            .map(str::to_owned);
-                        if let Some(name) = viewer {
-                            data.insert(Viewer(name));
-                        }
-                        Ok(())
+    Box::pin(
+        autumn_web::app()
+            .routes(autumn_web::routes![index])
+            // `state_initializer` puts the store into `AppState` (builder
+            // `with_extension` values stay on the builder, for plugins).
+            .state_initializer(|state| state.insert_extension(NoteStore::new()))
+            .plugin(
+                GraphqlPlugin::new(schema)
+                    // Demo auth: `Authorization: Bearer <name>` becomes the viewer.
+                    // A real app runs its session/token extractor here instead.
+                    .context(|parts, _state, data| {
+                        Box::pin(async move {
+                            let viewer = parts
+                                .headers
+                                .get("authorization")
+                                .and_then(|v| v.to_str().ok())
+                                .and_then(|v| v.strip_prefix("Bearer "))
+                                .map(str::to_owned);
+                            if let Some(name) = viewer {
+                                data.insert(Viewer(name));
+                            }
+                            Ok(())
+                        })
                     })
-                })
-                // Browser WebSocket clients send credentials in connection_init.
-                .on_ws_init(|payload: serde_json::Value, _state| async move {
-                    let mut data = async_graphql::Data::default();
-                    if let Some(name) = payload["token"].as_str() {
-                        data.insert(Viewer(name.to_owned()));
-                    }
-                    Ok(data)
-                })
-                .persisted_queries(PersistedQueryMode::Automatic)
-                .configure(|c| c.limits.max_depth = 8),
-        )
-        .run()
-        .await;
+                    // Browser WebSocket clients send credentials in connection_init.
+                    .on_ws_init(|payload: serde_json::Value, _state| async move {
+                        let mut data = async_graphql::Data::default();
+                        if let Some(name) = payload["token"].as_str() {
+                            data.insert(Viewer(name.to_owned()));
+                        }
+                        Ok(data)
+                    })
+                    .persisted_queries(PersistedQueryMode::Automatic)
+                    .configure(|c| c.limits.max_depth = 8),
+            )
+            .run(),
+    )
+    .await;
 }

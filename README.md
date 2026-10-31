@@ -102,7 +102,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design and
 
 ```toml
 [dependencies]
-autumn-plugin-graphql = "0.1"
+autumn-plugin-graphql = "0.2"
 async-graphql = { version = "7", default-features = false }
 ```
 

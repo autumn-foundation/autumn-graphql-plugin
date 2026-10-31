@@ -32,7 +32,7 @@ pub const PLUGIN_NAME: &str = "autumn-plugin-graphql";
 /// The `autumn-web` series this release is verified against, as the semver
 /// requirement declared in [`Plugin::contract`]. Autumn's startup gate and
 /// `autumn plugin-check` refuse any other series.
-pub const SUPPORTED_AUTUMN_WEB: &str = "0.8";
+pub const SUPPORTED_AUTUMN_WEB: &str = "0.9";
 
 type Materialize<E> = Box<dyn FnOnce(&GraphqlConfig) -> (E, Option<String>) + Send>;
 type RouterTransform = Box<dyn FnOnce(Router<AppState>) -> Router<AppState> + Send>;

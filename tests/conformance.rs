@@ -117,7 +117,7 @@ fn the_contract_admits_the_linked_autumn_web_and_no_other_series() {
         evaluate(&contract, AUTUMN_WEB_VERSION),
         ContractVerdict::Compatible
     );
-    for other in ["0.7.0", "0.9.0", "1.0.0"] {
+    for other in ["0.8.0", "0.10.0", "1.0.0"] {
         assert!(
             matches!(evaluate(&contract, other), ContractVerdict::Incompatible(_)),
             "contract must refuse autumn-web {other}"

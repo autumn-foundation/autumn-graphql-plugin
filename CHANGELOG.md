@@ -6,6 +6,13 @@ All notable changes to this crate are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-06
+
+### Changed
+
+- **Breaking:** Support `autumn-web` 0.10. The plugin now needs `autumn-web`
+  0.10 and Rust 1.97. Apps on `autumn-web` 0.9 stay on 0.2.0.
+
 ## [0.2.0] - 2026-10-31
 
 ### Changed

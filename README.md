@@ -376,6 +376,8 @@ fn committed_schema_matches_the_live_sdl() {
 
 | This crate | `autumn-web` | Notes |
 |---|---|---|
+| `0.3` | `0.10` (crates.io) | declares `Plugin::contract` for `0.10`; Rust 1.97 |
+| `0.2` | `0.9` (crates.io) | declares `Plugin::contract` for `0.9` |
 | `0.1` | `0.8` (crates.io) | declares `Plugin::contract` for `0.8` |
 
 The plugin declares its supported `autumn-web` range

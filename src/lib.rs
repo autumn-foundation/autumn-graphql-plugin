@@ -54,3 +54,8 @@ pub use transport::ws::{CLOSE_FORBIDDEN, CLOSE_GOING_AWAY, CLOSE_INIT_TIMEOUT};
 
 /// Re-exported so apps and this crate always agree on one async-graphql.
 pub use async_graphql;
+
+/// Compiles the Rust snippets of the README as doctests.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+pub struct ReadmeDoctests;

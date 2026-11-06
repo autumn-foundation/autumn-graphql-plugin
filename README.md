@@ -6,13 +6,29 @@ schema on an Autumn app with one line, and get the operational surface a real
 API needs: hardening, persisted operations, subscriptions, error hygiene,
 observability, and configuration that operators can change without a deploy.
 
-```rust
-use async_graphql::Schema;
+```rust,no_run
+use async_graphql::{EmptyMutation, EmptySubscription, Object, Schema};
 use autumn_plugin_graphql::GraphqlPlugin;
+use autumn_web::prelude::*;
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn hello(&self) -> &'static str {
+        "Hello from Autumn"
+    }
+}
+
+// Autumn needs at least one typed route. Plugin routers do not count.
+#[get("/")]
+async fn index() -> &'static str {
+    "GraphQL API at /graphql"
+}
 
 #[autumn_web::main]
 async fn main() {
-    let schema = Schema::build(Query, Mutation, Subscription).finish();
+    let schema = Schema::build(Query, EmptyMutation, EmptySubscription).finish();
     autumn_web::app()
         .routes(routes![index])
         .plugin(GraphqlPlugin::new(schema))
@@ -186,12 +202,19 @@ must never silently leave introspection on in production.
 In code:
 
 ```rust
-GraphqlPlugin::new(schema)
-    .path("/api/graphql")
-    .introspection(false)
-    .timeout(Duration::from_secs(10))
-    .batching(5)
-    .configure(|c| c.limits.max_depth = 8)
+use std::time::Duration;
+
+use async_graphql::Executor;
+use autumn_plugin_graphql::GraphqlPlugin;
+
+fn tune<E: Executor>(plugin: GraphqlPlugin<E>) -> GraphqlPlugin<E> {
+    plugin
+        .path("/api/graphql")
+        .introspection(false)
+        .timeout(Duration::from_secs(10))
+        .batching(5)
+        .configure(|c| c.limits.max_depth = 8)
+}
 ```
 
 Two endpoints with different settings read different sections:
@@ -202,28 +225,56 @@ Two endpoints with different settings read different sections:
 Every resolver can read:
 
 ```rust
-let state = ctx.data::<AppState>()?;                 // pool, extensions, config…
-let info = ctx.data::<GraphqlRequestInfo>()?;        // method, headers, request id, transport
+use async_graphql::{Context, Object, Result};
+use autumn_plugin_graphql::GraphqlRequestInfo;
+use autumn_web::AppState;
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn request_id(&self, ctx: &Context<'_>) -> Result<Option<String>> {
+        let _state = ctx.data::<AppState>()?;          // pool, extensions, config…
+        let info = ctx.data::<GraphqlRequestInfo>()?; // method, headers, request id, transport
+        Ok(info.request_id.clone())
+    }
+}
 ```
 
 **Context hooks** run per HTTP operation and per WebSocket upgrade, with the
 request's `Parts`, so any Autumn/axum extractor works:
 
 ```rust
-GraphqlPlugin::new(schema)
-    .context(|parts, state, data| Box::pin(async move {
-        if let Ok(user) = CurrentUser::from_request_parts(parts, state).await {
-            data.insert(user);
-        }
-        data.insert(DataLoader::new(UserLoader::new(state.clone()), tokio::spawn));
-        Ok(())
-    }))
-    .on_ws_init(|payload, state| async move {
-        // Browser WebSocket clients send credentials in connection_init.
-        let mut data = async_graphql::Data::default();
-        data.insert(authenticate(&state, payload["token"].as_str()).await?);
-        Ok(data)
-    })
+use async_graphql::Executor;
+use autumn_plugin_graphql::GraphqlPlugin;
+use autumn_web::AutumnError;
+
+/// Who is calling.
+struct Viewer(String);
+
+fn with_auth<E: Executor>(plugin: GraphqlPlugin<E>) -> GraphqlPlugin<E> {
+    plugin
+        .context(|parts, _state, data| {
+            Box::pin(async move {
+                // An extractor can read `parts` here, for example the session.
+                let header = parts.headers.get("authorization");
+                let token = header.and_then(|v| v.to_str().ok());
+                if let Some(name) = token.and_then(|v| v.strip_prefix("Bearer ")) {
+                    data.insert(Viewer(name.to_owned()));
+                }
+                Ok(())
+            })
+        })
+        .on_ws_init(|payload: serde_json::Value, _state| async move {
+            // Browser WebSocket clients send credentials in connection_init.
+            let Some(name) = payload["token"].as_str() else {
+                return Err(AutumnError::unauthorized_msg("token required"));
+            };
+            let mut data = async_graphql::Data::default();
+            data.insert(Viewer(name.to_owned()));
+            Ok(data)
+        })
+}
 ```
 
 Returning `Err(AutumnError)` from a hook refuses the request with that status
@@ -232,10 +283,21 @@ Returning `Err(AutumnError)` from a hook refuses the request with that status
 **Errors.** Convert framework errors with `.gql()`:
 
 ```rust
+use async_graphql::{ID, Object};
 use autumn_plugin_graphql::GraphqlResultExt as _;
+use autumn_web::{AutumnError, AutumnResult};
 
-async fn note(&self, ctx: &Context<'_>, id: ID) -> async_graphql::Result<Option<Note>> {
-    repo(ctx)?.find_by_id(parse_id(&id)?).await.gql()
+fn find_title(id: &str) -> AutumnResult<String> {
+    Err(AutumnError::not_found_msg(format!("note {id} not found")))
+}
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn title(&self, id: ID) -> async_graphql::Result<String> {
+        find_title(&id).gql()
+    }
 }
 ```
 
@@ -257,8 +319,18 @@ plugin emits is in `autumn_plugin_graphql::codes`.
 given, never a router a plugin nests, so guard the mount itself:
 
 ```rust
-GraphqlPlugin::new(schema)
-    .guard(RequireApiToken::new(store), "RequireApiToken")
+use std::sync::Arc;
+
+use async_graphql::Executor;
+use autumn_plugin_graphql::GraphqlPlugin;
+use autumn_web::auth::{InMemoryApiTokenStore, RequireApiToken};
+
+fn guarded<E: Executor>(
+    plugin: GraphqlPlugin<E>,
+    store: Arc<InMemoryApiTokenStore>,
+) -> GraphqlPlugin<E> {
+    plugin.guard(RequireApiToken::new(store), "RequireApiToken")
+}
 ```
 
 The layer runs before every handler (SDL and the WebSocket upgrade included),
@@ -351,18 +423,57 @@ name, type and a document hash, and operations slower than
 With the `test-support` feature:
 
 ```rust
+use async_graphql::{EmptyMutation, EmptySubscription, Object, Result, Schema};
+use autumn_plugin_graphql::error::{codes, graphql_error};
 use autumn_plugin_graphql::testing::GraphqlTestExt as _;
+use autumn_plugin_graphql::GraphqlPlugin;
+use autumn_web::test::TestApp;
 
-let client = TestApp::new().plugin(GraphqlPlugin::new(schema())).build();
-let res = client.graphql("{ notes { id } }").send().await;
-res.assert_no_errors();
-client.graphql("{ secret }").send().await.assert_error_code("FORBIDDEN");
+struct Query;
+
+#[Object]
+impl Query {
+    async fn hello(&self) -> &'static str {
+        "hi"
+    }
+
+    async fn secret(&self) -> Result<String> {
+        Err(graphql_error(codes::FORBIDDEN, "not for you", Some(403)))
+    }
+}
+
+fn schema() -> Schema<Query, EmptyMutation, EmptySubscription> {
+    Schema::build(Query, EmptyMutation, EmptySubscription).finish()
+}
+
+#[tokio::test]
+async fn hello_and_secret() {
+    let client = TestApp::new().plugin(GraphqlPlugin::new(schema())).build();
+    let res = client.graphql("{ hello }").send().await;
+    res.assert_no_errors();
+    client.graphql("{ secret }").send().await.assert_error_code("FORBIDDEN");
+}
 ```
 
 Keep a committed `schema.graphql` honest (regenerate with
 `AUTUMN_GRAPHQL_BLESS=1 cargo test`):
 
 ```rust
+use async_graphql::{EmptyMutation, EmptySubscription, Object, Schema};
+
+struct Query;
+
+#[Object]
+impl Query {
+    async fn hello(&self) -> &'static str {
+        "hi"
+    }
+}
+
+fn schema() -> Schema<Query, EmptyMutation, EmptySubscription> {
+    Schema::build(Query, EmptyMutation, EmptySubscription).finish()
+}
+
 #[test]
 fn committed_schema_matches_the_live_sdl() {
     autumn_plugin_graphql::sdl::assert_committed_sdl(

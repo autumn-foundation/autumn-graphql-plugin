@@ -27,6 +27,8 @@ See `docs/architecture.md`. In short: `plugin.rs` (builder + `Plugin` impl),
 
 ## Rules
 
+- README Rust snippets are doctests. Make them compile; use `no_run`, not `ignore`.
+  `tests/doc_snippets.rs` checks the TOML snippets and the version pins in the docs.
 - **Every transport goes through `Pipeline::prepare`.** New transports use
   `execute_one` or `GuardedExecutor`; never call the executor directly.
 - **Every error leaving the plugin has `extensions.code`.** New refusal

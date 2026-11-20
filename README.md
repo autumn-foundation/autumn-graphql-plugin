@@ -118,7 +118,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full design and
 
 ```toml
 [dependencies]
-autumn-plugin-graphql = "0.3"
+autumn-plugin-graphql = "0.4"
 async-graphql = { version = "7", default-features = false }
 ```
 
@@ -487,6 +487,7 @@ fn committed_schema_matches_the_live_sdl() {
 
 | This crate | `autumn-web` | Notes |
 |---|---|---|
+| `0.4` | `0.11` (crates.io) | declares `Plugin::contract` for `0.11`; Rust 1.97 |
 | `0.3` | `0.10` (crates.io) | declares `Plugin::contract` for `0.10`; Rust 1.97 |
 | `0.2` | `0.9` (crates.io) | declares `Plugin::contract` for `0.9` |
 | `0.1` | `0.8` (crates.io) | declares `Plugin::contract` for `0.8` |
